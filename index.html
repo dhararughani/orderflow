@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><title>OrderFlow</title>
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png?v=2"><link rel="apple-touch-icon" href="icon.png?v=2">
+<style>
+:root{--bg:#151b26;--bg2:#1a2130;--bg3:#222b3c;--line:#2a3345;--fg:#d6dae2;--mut:#8590a4;--buy:#089981;--sell:#f2385a;--acc:#2196f3;--warn:#f59e0b}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}body{background:var(--bg);color:var(--fg);font:12px/1.35 "Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+button,input,select{font:inherit;color:var(--fg)}button{cursor:pointer;background:none;border:0;padding:0}
+input,select{background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:4px 6px;outline:0}input:focus,select:focus{border-color:var(--acc)}
+input[type=checkbox]{accent-color:var(--acc)}
+#bar{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--line);background:#111722;flex:none;flex-wrap:wrap;min-height:38px}
+#bar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.tb{padding:4px 8px;border-radius:4px;color:var(--mut);white-space:nowrap}.tb:hover{background:var(--bg3);color:var(--fg)}.tb.on{color:var(--fg);background:var(--bg3)}
+.chip{padding:3px 8px;border-radius:12px;border:1px solid var(--line);color:var(--mut);font-size:11px}.chip.on{border-color:var(--acc);color:var(--fg);background:#16263d}
+#sym{width:120px}#tfN{width:56px}
+#status{margin-left:auto;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.pill{padding:2px 8px;border-radius:10px;font-size:11px;background:var(--bg3);color:var(--mut)}.pill.live{background:#06281f;color:#2ee6a6}.pill.bad{background:#3a0f18;color:#ff7a90}.pill.amber{background:#3b2a05;color:var(--warn)}
+#wrap{flex:1;display:flex;min-height:0}
+#chartBox{flex:1;position:relative;min-width:0}#cv{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;display:block}
+#tip{position:absolute;pointer-events:none;background:rgba(17,23,34,.92);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font:11px Consolas,monospace;display:none;white-space:pre;z-index:3}
+aside{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--bg)}aside.off{display:none}
+aside h4{margin:0;padding:6px 8px;font-size:12px;font-weight:600;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;background:#111722}aside h4 .grow{flex:1}
+#dom{width:300px}#tape{width:250px}#trader{width:230px;overflow:auto}
+#domBody,#tapeBody{flex:1;overflow:hidden;font:11px Consolas,monospace;position:relative}
+.dr{display:grid;grid-template-columns:28px 1fr 72px 1fr 28px 62px;height:17px;line-height:17px;border-bottom:1px solid #1c2433;cursor:default}
+.dr>span{padding:0 4px;overflow:hidden;white-space:nowrap}.dr .px{text-align:center;color:#b8c0cf}.dr .bid{text-align:right;cursor:pointer}.dr .ask{cursor:pointer}.dr .ord{text-align:center;font-weight:700;cursor:context-menu}
+.dr .bid:hover,.dr .ask:hover{outline:1px solid var(--acc)}.dr.last .px{background:#3b4a63;color:#fff}.dr.bb .bid{background:rgba(8,153,129,.25)}.dr.ba .ask{background:rgba(242,56,90,.25)}.dr .vol{position:relative;color:#9fb0cc}.dr .vol i{position:absolute;left:0;top:2px;bottom:2px;background:rgba(33,150,243,.35);z-index:-1}
+.dr.pos .px{outline:1px solid var(--warn)}
+.tr{display:grid;grid-template-columns:62px 1fr 1fr;height:18px;line-height:18px;padding:0 6px;border-bottom:1px solid #1a2130}.tr span:nth-child(n+2){text-align:right}
+.tr.h{color:var(--mut);background:#111722;position:sticky;top:0}
+#trader .sec{padding:8px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+#trader label{color:var(--mut);font-size:11px}#trader input,#trader select{width:100%}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.ob{padding:7px 4px;border-radius:4px;font-weight:600;text-align:center;background:var(--bg3)}.ob:hover{filter:brightness(1.2)}.ob.b{background:#0e6b4f}.ob.s{background:#a12039}.ob.bl{background:#1565c0}
+.kv{display:flex;justify-content:space-between}.kv b{font-weight:600}.pos{color:#2ee6a6}.neg{color:#ff6b84}.mut{color:var(--mut)}
+#replayBar{display:none;align-items:center;gap:6px}#replayBar.on{display:flex}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:20}.modal.open{display:grid}
+.mbox{background:var(--bg2);border:1px solid var(--line);border-radius:8px;width:780px;max-width:96vw;height:84vh;display:flex;flex-direction:column}
+.mbox h3{margin:0;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-size:15px}
+.mmain{flex:1;display:flex;min-height:0}.mtabs{width:160px;border-right:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:2px}.mtabs button{text-align:left;padding:7px 10px;border-radius:4px;color:var(--mut)}.mtabs button.on{background:var(--bg3);color:var(--fg)}
+.mbody{flex:1;overflow:auto;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;align-content:start}.mbody .full{grid-column:1/-1}.mbody label{display:block;color:var(--mut);margin-bottom:4px}.mbody input,.mbody select{width:100%}
+.mbody .cb{display:flex;gap:8px;align-items:center;color:var(--fg)}.mbody .cb input{width:auto}
+.note{background:#132238;border:1px solid #1f3a5c;border-radius:6px;padding:8px 10px;color:#a9c4e8}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;border-top:1px solid var(--line)}
+.btn{background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:6px 14px}.btn.blue{background:var(--acc);border-color:var(--acc)}.btn.red{background:#7f1d1d;border-color:#7f1d1d}
+table.cs{width:100%;border-collapse:collapse}table.cs td,table.cs th{padding:3px;border-bottom:1px solid var(--line);text-align:left}table.cs input,table.cs select{width:100%;padding:3px}table.cs select{min-width:86px}
+#ws{display:none;flex:1;min-height:0;gap:2px;background:var(--line)}#ws iframe{border:0;width:100%;height:100%;background:var(--bg);display:block}
+body.multi #ws{display:grid}body.multi #wrap{display:none}body.multi #bar>:not(.keep){display:none}body.multi #stFeed,body.multi #stRec{display:none}
+body:not(.multi) .wsOnly{display:none}body.pane #wsCtl{display:none}
+#ws.l2h{grid-template-columns:1fr 1fr}#ws.l2v{grid-template-rows:1fr 1fr}#ws.l3{grid-template-columns:3fr 2fr;grid-template-rows:1fr 1fr}#ws.l3 iframe:first-child{grid-row:1/3}#ws.l4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.mbody textarea{width:100%;height:300px;font:12px/1.45 Consolas,monospace;background:#0f141d;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:8px;resize:vertical;tab-size:2;outline:0}
+.mbody code{background:#0f141d;padding:1px 4px;border-radius:3px;font-size:11px}
+#chipsBtn{display:none}body.pane #chipsBtn{display:inline}body.pane #chips{display:none}
+body.pane #chips.open{display:flex;flex-wrap:wrap;gap:4px;position:absolute;top:36px;left:8px;right:8px;z-index:10;background:#111722;border:1px solid var(--line);border-radius:6px;padding:8px}
+body.pane #bar{gap:3px;padding:2px 4px;min-height:30px;position:relative}body.pane #bar .sep{display:none}body.pane #bar select,body.pane #bar input{padding:2px 4px}
+body.pane #stRith,body.pane #stRec,body.pane #clock,body.pane #tfType,body.pane #tfN,body.pane #visual{display:none}body.pane .tb{padding:3px 5px}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:8px 14px;display:none;z-index:30;max-width:70vw}
+</style></head><body>
+<div id="bar">
+  <span id="wsCtl" class="keep"><select id="layout" title="Charts in this window"><option value="1">1 chart</option><option value="2h">2 side by side</option><option value="2v">2 stacked</option><option value="3">3 charts</option><option value="4">4 charts</option></select>
+    <span class="wsOnly"><select id="wsSel" title="Saved workspaces"></select><button class="tb" id="wsSave" title="Save these charts and their settings as a workspace">Save workspace</button><button class="tb" id="wsDel" title="Delete the selected workspace">Delete</button></span><span class="sep"></span></span>
+  <select id="src" title="Data source"><option value="rithmic">Rithmic (futures)</option><option value="bybit">Bybit (crypto)</option><option value="bitfinex">Bitfinex (crypto, order-by-order)</option><option value="replay">Market Replay</option></select>
+  <input id="sym" list="symList" title="Instrument" spellcheck="false"><datalist id="symList"></datalist>
+  <span id="replayBar"><select id="recFile" title="Recorded session"></select><button class="tb" id="rpPlay" title="Play / pause">⏸</button>
+    <select id="rpSpeed" title="Replay speed"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="25">25×</option><option value="100">100×</option><option value="0">Max</option></select>
+    <button class="tb" id="rpSkip1" title="Skip forward 1 minute">+1m</button><button class="tb" id="rpSkip10" title="Skip forward 10 minutes">+10m</button><span id="rpClock" class="mut"></span></span>
+  <span class="sep"></span>
+  <span id="tfBtns"></span>
+  <select id="tfType" title="Bar type"><option value="time">Seconds</option><option value="tick">Tick</option><option value="volume">Volume</option><option value="range">Range</option></select><input id="tfN" type="number" min="1" title="Bar size">
+  <span class="sep"></span>
+  <select id="rowT" title="Ticks per row"></select>
+  <select id="mode" title="Cluster content"><option value="bidask">Bid × Ask</option><option value="volume">Volume</option><option value="delta">Delta</option><option value="trades">Trades</option><option value="voldelta">Volume + Delta</option><option value="none">Candles only</option></select>
+  <select id="visual" title="Cluster visual mode"><option value="fill">Full row</option><option value="hist">Histogram</option><option value="none">Text only</option></select>
+  <span class="sep"></span>
+  <button class="tb" id="chipsBtn" title="Show / hide chart tools">Tools ▾</button><span id="chips"></span>
+  <span class="sep"></span>
+  <button class="tb" id="dAlert" title="Price alert: click a price on the chart (or Alt+click). Right-click an alert line to remove it">🔔</button><button class="tb" id="dHline" title="Horizontal line: click on the chart">―</button><button class="tb" id="dRect" title="Rectangle: drag on the chart">▭</button><button class="tb" id="dClear" title="Remove all drawings on this instrument">⌫</button>
+  <button class="tb" id="shot" title="Copy a screenshot of the chart">📷</button>
+  <div id="status" class="keep"><span id="stFeed" class="pill">—</span><span id="stRith" class="pill">Rithmic: off</span><span id="stRec" class="pill" title="Recording to recordings\ (Settings → Data)">● REC</span><span id="clock" class="mut"></span><button class="tb" id="setBtn" title="Settings">⚙ Settings</button></div>
+</div>
+<div id="ws"></div>
+<div id="wrap">
+  <div id="chartBox"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <aside id="dom"><h4>Smart DOM <span class="grow"></span><button class="tb" id="domCenter" title="Center on the last price">⊙</button></h4><div id="domBody"></div></aside>
+  <aside id="tape"><h4>Smart Tape <span class="grow"></span><button class="tb" id="tapeFreeze" title="Freeze / resume">❚❚</button></h4><div id="tapeBody"></div></aside>
+  <aside id="trader">
+    <h4>Chart Trader</h4>
+    <div class="sec"><label>Account</label><select id="acct"></select>
+      <div class="g2"><div><label>Qty</label><input id="qty" type="number" min="1" value="1"></div><div><label>Presets</label><div class="g3" id="qtyPre"><button class="ob">1</button><button class="ob">2</button><button class="ob">5</button></div></div></div>
+      <div class="g2"><div><label>Stop loss (ticks)</label><input id="slT" type="number" min="0" value="0"></div><div><label>Take profit (ticks)</label><input id="tpT" type="number" min="0" value="0"></div></div></div>
+    <div class="sec">
+      <div class="g2"><button class="ob b" data-o="buyMkt">Buy MKT</button><button class="ob s" data-o="sellMkt">Sell MKT</button>
+      <button class="ob b" data-o="buyAsk">Buy Ask</button><button class="ob s" data-o="sellAsk">Sell Ask</button>
+      <button class="ob b" data-o="buyBid">Buy Bid</button><button class="ob s" data-o="sellBid">Sell Bid</button>
+      <button class="ob" data-o="cancelBids">Canc. Bids</button><button class="ob" data-o="cancelAsks">Canc. Asks</button>
+      <button class="ob" data-o="cancelAll">Cancel All</button><button class="ob" data-o="reverse">Reverse</button></div>
+      <button class="ob" data-o="breakeven">Breakeven</button><button class="ob bl" data-o="close">Close</button>
+      <div class="mut" style="font-size:11px">Chart: Shift+click = limit order, Ctrl+click = stop order at that price. DOM: click bid/ask column, right-click an order to cancel.</div></div>
+    <div class="sec" id="posBox"></div>
+    <div class="sec" id="riskBox"></div>
+  </aside>
+</div>
+
+<div class="modal" id="mSet"><div class="mbox"><h3>Settings <button onclick="closeSet()">✕</button></h3>
+  <div class="mmain"><div class="mtabs" id="setTabs"></div><div class="mbody" id="setBody"></div></div>
+  <div class="mfoot"><button class="btn" onclick="closeSet()">Close</button></div></div></div>
+<div id="toast"></div>
+<script src="flow.js"></script>
+<script src="app.js"></script>
+<script src="extras.js"></script>
+</body></html>

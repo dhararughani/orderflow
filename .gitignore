@@ -1,0 +1,6 @@
+.orderflow-profile/
+data/
+recordings/
+server.log
+__pycache__/
+history/
